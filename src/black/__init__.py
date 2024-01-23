@@ -86,6 +86,11 @@ from blib2to3.pytree import Leaf, Node
 
 COMPILED = Path(__file__).suffix in (".pyd", ".so")
 
+
+class InvalidConfigKey(Exception):
+    """Invalid configuration key found in pyproject toml."""
+
+
 # types
 FileContent = str
 Encoding = str
@@ -117,7 +122,10 @@ FileMode = Mode
 
 
 def read_pyproject_toml(
-    ctx: click.Context, param: click.Parameter, value: Optional[str]
+    ctx: click.Context,
+    param: click.Parameter,
+    value: Optional[str],
+    spell_check: bool = True,
 ) -> Optional[str]:
     """Inject Black configuration from "pyproject.toml" into defaults in `ctx`.
 
@@ -141,6 +149,9 @@ def read_pyproject_toml(
     if not config:
         return None
     else:
+        if spell_check:
+            spellcheck_pyproject_toml_keys(ctx, list(config), value)
+
         # Sanitize the values to be Click friendly. For more information please see:
         # https://github.com/psf/black/issues/1458
         # https://github.com/pallets/click/issues/1567
@@ -178,6 +189,15 @@ def read_pyproject_toml(
 
     ctx.default_map = default_map
     return value
+
+
+def spellcheck_pyproject_toml_keys(
+    ctx: click.Context, config_keys: List[str], config_file_path: str
+) -> None:
+    available_config_options = {param.name for param in ctx.command.params}
+    for key in config_keys:
+        if key not in available_config_options:
+            raise InvalidConfigKey(f"Invalid key {key} in {config_file_path}")
 
 
 def target_version_option_callback(
