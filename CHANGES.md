@@ -12,6 +12,8 @@
 
 <!-- Changes that affect Black's stable style -->
 
+- Fix `ASTSafetyError` on comment in return type annotation
+
 ### Preview style
 
 <!-- Changes that affect Black's preview style -->
